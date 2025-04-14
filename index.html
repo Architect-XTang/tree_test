@@ -1,117 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Interactive Tree Visualization</title>
+  <meta charset="UTF-8" />
+  <title>Word Cloud Viewer</title>
   <style>
-    body { margin: 0; overflow: hidden; }
-    svg { width: 100vw; height: 100vh; }
-    .node circle { fill: #999; cursor: pointer; }
-    .node text { font: 12px sans-serif; pointer-events: none; }
-    .link { fill: none; stroke: #555; stroke-opacity: 0.4; stroke-width: 1.5px; }
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #f0f0f0;
+      text-align: center;
+    }
+    select {
+      padding: 0.5rem;
+      margin: 1rem;
+    }
+    img {
+      margin-top: 2rem;
+      max-width: 90%;
+      border: 1px solid #ccc;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <h1>Word Cloud Viewer</h1>
+
+  <label for="book">Choose a Book:</label>
+  <select id="book">
+    <option value="">--Select a Book--</option>
+    <option value="Book1">Book 1</option>
+    <option value="Book2">Book 2</option>
+    <!-- Add more books -->
+  </select>
+
+  <label for="location">Choose a Location:</label>
+  <select id="location">
+    <option value="">--Select a Location--</option>
+    <option value="London">London</option>
+    <option value="Paris">Paris</option>
+    <option value="NewYork">NewYork</option>
+    <!-- Add more locations -->
+  </select>
+
+  <div id="image-container">
+    <img id="wordcloud" src="" alt="Word Cloud will appear here">
+  </div>
+
   <script>
-    fetch('tree.json')
-      .then(response => response.json())
-      .then(treeData => {
-        const root = d3.hierarchy(treeData);
-        root.x0 = 0;
-        root.y0 = 0;
+    const bookSelect = document.getElementById('book');
+    const locationSelect = document.getElementById('location');
+    const image = document.getElementById('wordcloud');
 
-        const dx = 10;
-        const dy = 180;
-        const treeLayout = d3.tree().nodeSize([dx, dy]);
-        const diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
+    function updateImage() {
+      const book = bookSelect.value;
+      const location = locationSelect.value;
 
-        const svg = d3.select("body").append("svg")
-          .attr("viewBox", [-dy / 2, -dx * 20, window.innerWidth, window.innerHeight])
-          .call(d3.zoom().on("zoom", (event) => {
-            g.attr("transform", event.transform);
-          }));
+      if (book && location) {
+        const filename = `wordclouds/${book}_${location}.png`;
+        image.src = filename;
+        image.alt = `${book} - ${location} Word Cloud`;
+      } else {
+        image.src = '';
+        image.alt = 'Word Cloud will appear here';
+      }
+    }
 
-        const g = svg.append("g").attr("transform", `translate(40,40)`);
-
-        let i = 0;
-
-        root.each(d => {
-          if (d.children) {
-            d._children = d.children;
-            d.children = null;
-          }
-        });
-
-        function update(source) {
-          const nodes = root.descendants().reverse();
-          const links = root.links();
-
-          treeLayout(root);
-
-          const transition = svg.transition().duration(400);
-
-          const node = g.selectAll("g.node")
-            .data(nodes, d => d.id || (d.id = ++i));
-
-          const nodeEnter = node.enter().append("g")
-            .attr("class", "node")
-            .attr("transform", d => `translate(${source.y0},${source.x0})`)
-            .on("click", (event, d) => {
-              d.children = d.children ? null : d._children;
-              update(d);
-            });
-
-          nodeEnter.append("circle")
-            .attr("r", 4)
-            .attr("fill", d => d._children ? "#555" : "#999");
-
-          nodeEnter.append("text")
-            .attr("dy", "0.31em")
-            .attr("x", d => d._children ? -6 : 6)
-            .attr("text-anchor", d => d._children ? "end" : "start")
-            .text(d => d.data.name)
-            .clone(true).lower()
-            .attr("stroke", "white");
-
-          const nodeUpdate = node.merge(nodeEnter).transition(transition)
-            .attr("transform", d => `translate(${d.y},${d.x})`);
-
-          nodeUpdate.select("circle")
-            .attr("fill", d => d._children ? "#555" : "#999");
-
-          const nodeExit = node.exit().transition(transition).remove()
-            .attr("transform", d => `translate(${source.y},${source.x})`);
-
-          nodeExit.select("circle").attr("r", 0);
-          nodeExit.select("text").style("fill-opacity", 0);
-
-          const link = g.selectAll("path.link")
-            .data(links, d => d.target.id);
-
-          const linkEnter = link.enter().insert("path", "g")
-            .attr("class", "link")
-            .attr("d", d => {
-              const o = { x: source.x0, y: source.y0 };
-              return diagonal({ source: o, target: o });
-            });
-
-          link.merge(linkEnter).transition(transition)
-            .attr("d", diagonal);
-
-          link.exit().transition(transition).remove()
-            .attr("d", d => {
-              const o = { x: source.x, y: source.y };
-              return diagonal({ source: o, target: o });
-            });
-
-          root.eachBefore(d => {
-            d.x0 = d.x;
-            d.y0 = d.y;
-          });
-        }
-
-        update(root);
+    bookSelect.addEventListener('change', updateImage);
+    locationSelect.addEventListener('change', updateImage);
+  </script>
+</body>
+</html>
       });
   </script>
 </body>
