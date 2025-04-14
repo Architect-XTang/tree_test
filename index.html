@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>Word Cloud Viewer</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-sA+e2CwKk+EmRgE0rTjFbd+DR92Y5v9zzT9ULg86LE8=" crossorigin="" />
   <style>
     body {
       font-family: sans-serif;
@@ -20,6 +22,13 @@
       border: 1px solid #ccc;
       box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
     }
+    #map {
+      margin: 2rem auto;
+      width: 90%;
+      height: 400px;
+      border: 2px solid #aaa;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
@@ -30,7 +39,6 @@
     <option value="">--Select a Book--</option>
     <option value="Book1">Book 1</option>
     <option value="Book2">Book 2</option>
-    <!-- Add more books -->
   </select>
 
   <label for="location">Choose a Location:</label>
@@ -39,17 +47,38 @@
     <option value="London">London</option>
     <option value="Paris">Paris</option>
     <option value="NewYork">NewYork</option>
-    <!-- Add more locations -->
   </select>
 
   <div id="image-container">
     <img id="wordcloud" src="" alt="Word Cloud will appear here">
   </div>
 
+  <h2>Location Map</h2>
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o9N1j3DufxC6B3VdWgN+jQ1MzEu4Rdzm5vyeelQ8o3o=" crossorigin=""></script>
+
   <script>
     const bookSelect = document.getElementById('book');
     const locationSelect = document.getElementById('location');
     const image = document.getElementById('wordcloud');
+
+    const locationCoords = {
+      London: [51.5074, -0.1278],
+      Paris: [48.8566, 2.3522],
+      NewYork: [40.7128, -74.0060]
+    };
+
+    // Leaflet 初始化
+    const map = L.map('map').setView([51.5074, -0.1278], 10); // 初始视角：London
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker = L.marker([51.5074, -0.1278]).addTo(map); // 初始标记
 
     function updateImage() {
       const book = bookSelect.value;
@@ -59,6 +88,13 @@
         const filename = `wordclouds/${book}_${location}.png`;
         image.src = filename;
         image.alt = `${book} - ${location} Word Cloud`;
+
+        // 如果坐标存在，就更新地图位置
+        if (locationCoords[location]) {
+          const [lat, lng] = locationCoords[location];
+          map.setView([lat, lng], 10);
+          marker.setLatLng([lat, lng]);
+        }
       } else {
         image.src = '';
         image.alt = 'Word Cloud will appear here';
@@ -67,10 +103,6 @@
 
     bookSelect.addEventListener('change', updateImage);
     locationSelect.addEventListener('change', updateImage);
-  </script>
-</body>
-</html>
-      });
   </script>
 </body>
 </html>
